@@ -13,12 +13,15 @@ import java.util.List;
 import java.io.Serializable;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * @description t_img
  * @author rick
  * @date 2022-07-07
  */
 @Data
+@Slf4j
 public class Img implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -72,17 +75,6 @@ public class Img implements Serializable {
 
     private String sha;
 
-    @TableField(exist = false)
-    private String imgData;
-
-    public String getImgData() {
-        if(StringUtils.isEmpty(this.imgData)){
-            String res = HttpRequest.get(this.imgUrl).headerMap(ImgController.headers,true).execute().body();
-            JSONObject jsonObject = JSONObject.parseObject(res);
-            this.imgData = jsonObject.getString("content");
-        }
-        return imgData;
-    }
-
+    private String fileName;
     public Img() {}
 }

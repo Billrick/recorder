@@ -35,10 +35,9 @@ public class RecordController extends BaseController {
     }
 
     @PostMapping("/list")
-    public TableDataInfo list(Record record){
+    public TableDataInfo list(@RequestBody(required = false) Record record){
         startPage();
         List<Record> list = recordService.getList(record);
-
         return getDataTable(list);
     }
 }
