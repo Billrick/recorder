@@ -1,43 +1,39 @@
 package com.rick.entity;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.TableField;
-import lombok.Data;
-import java.util.Date;
-import java.util.List;
-import java.io.Serializable;
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
+import lombok.Data;
+
+import java.io.Serializable;
+import java.util.Date;
+
 /**
- * @description t_record
+ * @description tmp_img
  * @author rick
- * @date 2022-07-07
+ * @date 2022-08-01
  */
 @Data
-public class Record implements Serializable {
+public class TmpImg implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId(type = IdType.AUTO)
     /**
-    * id
+    * sha
     */
-    private Long id;
+    @TableId
+    private String sha;
 
     /**
-    * 记录描述
+    * url
     */
-    private String recordDesc;
+    private String url;
 
     /**
     * 状态
     */
     private String status;
-
-    /**
-    * category_id
-    */
-    private Integer categoryId;
 
     /**
      * create_time
@@ -63,16 +59,11 @@ public class Record implements Serializable {
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private Integer updateBy;
 
-    private String isPrivate;
+    public TmpImg() {}
 
-    @TableField(exist = false)
-    private User user;
-
-    @TableField(exist = false)
-    private List<Img> imgs;
-
-    @TableField(exist = false)
-    private List<String> removeSha;
-
-    public Record() {}
+    public TmpImg(String sha, String url, String status) {
+        this.sha = sha;
+        this.url = url;
+        this.status = status;
+    }
 }

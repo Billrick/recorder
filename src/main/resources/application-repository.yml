@@ -1,0 +1,12 @@
+# github
+#github:
+#  type: github
+#  access-token: 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
+#  user: Billrick
+#  respository: recorderF
+# gitee
+repository:
+  type: gitee
+  access-token: ffe1179f05b469ca1d67bfda4923f079
+  user: Billrick
+  repository: recorderF

@@ -2,20 +2,26 @@ package com.rick.controller;
 
 import cn.hutool.core.codec.Base64Encoder;
 import cn.hutool.core.io.FileTypeUtil;
-import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.http.HttpRequest;
 import cn.hutool.http.HttpUtil;
 import cn.hutool.http.Method;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.rick.base.controller.BaseController;
+import com.rick.constants.Constants;
 import com.rick.domain.R;
+import com.rick.domain.request.DelFileReq;
 import com.rick.entity.Img;
+import com.rick.entity.TmpImg;
+import com.rick.framework.config.RepositoryConfig;
 import com.rick.service.IImgService;
+import com.rick.service.ITmpImgService;
 import com.rick.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -30,46 +36,72 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class ImgController extends BaseController {
 
-    public final static String USER = "Billrick";
-    public final static String REPS = "recorderF";
-    public final static String AUTH_TOKEN = "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";
 
-    public static Map<String,String> headers = new HashMap<>();
-    static {
-        headers.put("Accept","application/vnd.github.v3+json");
-        headers.put("Authorization","token "+AUTH_TOKEN);
+    private final RepositoryConfig config;
+
+    public Map<String, String> headers = null;
+
+    public synchronized Map<String, String> getRepositoryHeaders() {
+        if (headers == null) {
+            headers = new HashMap<>();
+            headers.put("Accept", "application/vnd.github.v3+json");
+            headers.put("Authorization", "token " + config.getAccessToken());
+        }
+        return headers;
     }
 
     public final IImgService imgService;
 
+    public final ITmpImgService tmpImgService;
+
     @PostMapping("/upload")
-    public R<JSONObject> upload(Integer categoryId,MultipartFile file) throws IOException {
+    public R<JSONObject> upload(Integer categoryId, MultipartFile file) throws IOException {
         //用户id + 分类id
-        String filePath = getLoginUser().getId() + "/"+categoryId;
+        String filePath = getLoginUser().getId() + "/" + categoryId;
         String type = FileTypeUtil.getType(file.getInputStream());
-        String uuid = (file.getOriginalFilename().replace("."+type,"")) +"@"+ IdUtil.fastSimpleUUID() + "."+type;
-        String url = MessageFormat.format("https://api.github.com/repos/{0}/{1}/contents/{2}/{3}",USER,REPS,filePath,uuid);
+        String uuid = (file.getOriginalFilename().replace("." + type, "")) + "@" + IdUtil.fastSimpleUUID() + "." + type;
+        String url = MessageFormat.format(config.getOpFileUrl(), config.getUser(), config.getRepository(), filePath, uuid);
         String base64 = Base64Encoder.encode(file.getBytes());
         JSONObject params = new JSONObject();
-        params.put("message","put code");
-        params.put("content",base64);
-        String body = HttpUtil.createRequest(Method.PUT,url).addHeaders(headers).body(params.toJSONString()).execute().body();
-        return R.ok(JSONObject.parseObject(body));
+        params.put("message", "put code");
+        params.put("content", base64);
+        HttpRequest request = null;
+        if (config.isGithub()) {
+            request = HttpUtil.createRequest(Method.PUT, url).addHeaders(getRepositoryHeaders());
+        } else {
+            request = HttpUtil.createRequest(Method.POST, url);
+            params.put("access_token", config.getAccessToken());
+        }
+        String body = request.body(params.toJSONString()).execute().body();
+        JSONObject result = JSONObject.parseObject(body);
+        if(result.containsKey("content")){
+            JSONObject content = result.getJSONObject("content");
+            TmpImg tmpImg = new TmpImg(content.getString("sha"),content.getString("url"), Constants.STATUS_TEMP);
+            //暂存图片  如果明天没有被存储到t_img表中 表示是垃圾数据， 系统在后续异步追踪时 会清理
+            tmpImgService.save(tmpImg);
+        }
+        return R.ok(result);
     }
 
-    @PostMapping("/del")
-    public R<JSONObject> del(Integer categoryId,String sha,String fileName){
-        if(StringUtils.isEmpty(fileName)){
-            Img one = imgService.getOne(new LambdaQueryWrapper<Img>().eq(Img::getSha, sha));
-            int i = one.getImgUrl().lastIndexOf("/");
-            fileName = one.getImgUrl().substring(i);
-        }
-        String filePath = getLoginUser().getId() + "/"+categoryId;
-        String url = MessageFormat.format("https://api.github.com/repos/{0}/{1}/contents/{2}/{3}",USER,REPS,filePath,fileName);
+    //删除暂存的文件
+    @PostMapping("/delTmp")
+    public R<JSONObject> del(@RequestBody DelFileReq req) {
+        String filePath = getLoginUser().getId() + "/" + req.getCategoryId();
+        String url = MessageFormat.format(config.getOpFileUrl(), config.getUser(), config.getRepository(), filePath, req.getFileName());
         JSONObject params = new JSONObject();
-        params.put("message","remove code");
-        params.put("sha",sha);
-        String body = HttpUtil.createRequest(Method.DELETE, url).addHeaders(headers).body(params.toJSONString()).execute().body();
+        params.put("message", "remove code");
+        params.put("sha", req.getSha());
+        HttpRequest request = HttpUtil.createRequest(Method.DELETE, url);
+        if (config.isGithub()) {
+            request.addHeaders(headers);
+        } else {
+            params.put("access_token", config.getAccessToken());
+        }
+        String body = request.body(params.toJSONString()).execute().body();
+        TmpImg img = tmpImgService.getOne(new LambdaQueryWrapper<TmpImg>().eq(TmpImg::getSha, req.getSha()));
+        if(img != null){
+            tmpImgService.update(new LambdaUpdateWrapper<TmpImg>().set(TmpImg::getStatus,Constants.STATUS_OFF).eq(TmpImg::getSha, req.getSha()));
+        }
         return R.ok(JSONObject.parseObject(body));
     }
 }

@@ -85,5 +85,10 @@ public class Constants {
     public static final String STATUS_DISABLED = "1";
     //删除
     public static final String STATUS_OFF = "3";
+    //系统删除
+    public static final String STATUS_SYS_OFF = "4";
+    //暂存
+    public static final String STATUS_TEMP = "5";
+
 
 }

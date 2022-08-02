@@ -26,11 +26,8 @@ public class Img implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId(type = IdType.AUTO)
-    /**
-    * id
-    */
-    private Long id;
+    @TableId
+    private String sha;
 
     /**
     * 记录id
@@ -73,7 +70,7 @@ public class Img implements Serializable {
 
     private String isPrivate;
 
-    private String sha;
+
 
     private String fileName;
     public Img() {}

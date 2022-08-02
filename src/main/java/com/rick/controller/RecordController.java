@@ -9,10 +9,7 @@ import com.rick.service.IRecordCategoryService;
 import com.rick.service.IRecordService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -25,12 +22,11 @@ public class RecordController extends BaseController {
 
     @PostMapping("/save")
     public R<Void> save(@Validated @RequestBody Record record){
-
         return toAjax(recordService.saveRecordAndImg(record));
     }
 
-    @PostMapping("/delete")
-    public R<Void> delete(Integer id){
+    @PostMapping("/delete/{id}")
+    public R<Void> delete(@PathVariable Integer id){
         return toAjax(recordService.deleteRecordAndImg(id));
     }
 
