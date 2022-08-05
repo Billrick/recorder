@@ -6,6 +6,7 @@ import com.rick.domain.R;
 import com.rick.domain.page.TableDataInfo;
 import com.rick.entity.RecordCategory;
 import com.rick.service.IRecordCategoryService;
+import com.rick.utils.IdToNameUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
@@ -22,12 +23,16 @@ public class RecordCategoryController extends BaseController {
 
     @PostMapping("/save")
     public R<Void> save(@Validated @RequestBody RecordCategory recordCategory){
-        return toAjax(recordCategoryService.save(recordCategory));
+        boolean b = recordCategoryService.save(recordCategory);
+        if(b){IdToNameUtil.modifyRecordCategory(recordCategory.getId(),recordCategory.getTitle());};
+        return toAjax(b);
     }
 
     @PostMapping("/update")
     public R<Void> update(@Validated @RequestBody RecordCategory recordCategory){
-        return toAjax(recordCategoryService.updateById(recordCategory));
+        boolean b = recordCategoryService.updateById(recordCategory);
+        if(b){IdToNameUtil.modifyRecordCategory(recordCategory.getId(),recordCategory.getTitle());};
+        return toAjax(b);
     }
 
     @PostMapping("/list")

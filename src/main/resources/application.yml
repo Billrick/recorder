@@ -190,6 +190,8 @@ security:
     - /*/api-docs
     # druid 监控配置
     - /druid/**
+    # 评论列表
+    - /c/comments/*
   # 用户放行
   permit-all:
     # actuator 监控配置

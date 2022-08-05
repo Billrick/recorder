@@ -47,25 +47,21 @@ public class View implements Serializable {
     /**
      * create_time
      */
-    @TableField(fill = FieldFill.INSERT)
     private Date createTime;
 
     /**
      * create_by
      */
-    @TableField(fill = FieldFill.INSERT)
     private Integer createBy;
 
     /**
      * update_time
      */
-    @TableField(fill = FieldFill.INSERT_UPDATE)
     private Date updateTime;
 
     /**
      * update_by
      */
-    @TableField(fill = FieldFill.INSERT_UPDATE)
     private Integer updateBy;
 
     public View() {}

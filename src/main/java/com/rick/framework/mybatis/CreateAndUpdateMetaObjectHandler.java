@@ -35,6 +35,7 @@ public class CreateAndUpdateMetaObjectHandler implements MetaObjectHandler {
         Integer userId = getLoginId();
         this.setFieldValByName("updateBy", userId, metaObject);
         this.setFieldValByName("updateTime", new Date(), metaObject);
+        this.setFieldValByName("syncTime", new Date(), metaObject);
     }
 
     /**

@@ -65,14 +65,5 @@ public class Record implements Serializable {
 
     private String isPrivate;
 
-    @TableField(exist = false)
-    private User user;
-
-    @TableField(exist = false)
-    private List<Img> imgs;
-
-    @TableField(exist = false)
-    private List<String> removeSha;
-
     public Record() {}
 }

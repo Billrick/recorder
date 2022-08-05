@@ -91,4 +91,18 @@ public class Constants {
     public static final String STATUS_TEMP = "5";
 
 
+
+    public static final String VIEW_TOPIC_LIKE = "RL";
+    public static final String VIEW_TOPIC_COLLECTION = "RC";
+
+    public static final String VIEW_COUNT_TOPIC = "R0";
+
+    // 0:topic 1:recordId
+    public final static String LIKE_RECORD_USER = "recorder:view:log:{}:{}";
+    public final static String LIKE_RECORD_AND_RANK = "recorder:view:rank:{}:{}";
+    public final static String LIKE_RECORD_COUNTER = "recorder:view:counter:{}";
+
+
+
+
 }
