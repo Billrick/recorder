@@ -9,6 +9,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.rick.constants.Constants;
 import com.rick.domain.CommentDTO;
 import com.rick.domain.RecordDTO;
+import com.rick.domain.WebUserDTO;
 import com.rick.entity.*;
 import com.rick.framework.satoken.LoginHelper;
 import com.rick.mapper.RecordMapper;
@@ -82,24 +83,28 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper, Record> impleme
     }
 
     @Override
-    public List<RecordDTO> getList(Record record) {
+    public List<RecordDTO> getList(RecordDTO record) {
         LambdaQueryWrapper<Record> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(Record::getCreateBy,LoginHelper.getUserId());
+
         if (record != null) {
             wrapper.eq(record.getCategoryId() != null, Record::getCategoryId, record.getCategoryId());
+            wrapper.in(CollectionUtil.isNotEmpty(record.getCategoryIds()),Record::getCategoryId,record.getCategoryIds());
         }
         List<RecordDTO> list = BeanUtil.copyToList(list(wrapper), RecordDTO.class);
         list.forEach(item -> {
             //获取图片
             List<Img> imgs = imgService.list(new LambdaQueryWrapper<Img>().eq(Img::getRecordId, item.getId()).eq(Img::getStatus, Constants.STATUS_ON));
             item.setImgs(imgs);
-            item.setUser(userService.getById(item.getCreateBy()));
+            User user = userService.getById(item.getCreateBy());
+            item.setUser(BeanUtil.toBean(user, WebUserDTO.class));
             //获取 点赞 收藏的数量
             ViewCount viewInfo = getViewInfo(item.getId() + "",true);
 
             //获取 评论记录
             List<Comment> comments = commentService.list(new LambdaQueryWrapper<Comment>().eq(Comment::getRecordId, item.getId()).eq(Comment::getStatus, Constants.STATUS_ON));
             item.setComments(BeanUtil.copyToList(comments, CommentDTO.class));
-            viewInfo.setComment(Long.valueOf(comments.size()));
+            //viewInfo.setComment(Long.valueOf(comments.size()));
             item.setViewCount(viewInfo);
         });
         return list;

@@ -24,15 +24,13 @@ public class CommentDTO extends Comment implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    private String createByName;
+    private WebUserDTO creator;
 
-    public String getCreateByName() {
-        if(StringUtils.isEmpty(this.createByName) && this.getCreateBy() != null){
-            String otherLabel = (StpUtil.isLogin()? this.getCreateBy().intValue() == LoginHelper.getUserId() ? "<span>（我）</span>":"":"");
-            this.createByName = IdToNameUtil.getUserName(this.getCreateBy()) + otherLabel;
+    public WebUserDTO getCreator() {
+        if(this.creator == null && this.getCreateBy() != null){
+            this.creator = IdToNameUtil.getUserInfo(this.getCreateBy());
         }
-
-        return createByName;
+        return creator;
     }
 
     public CommentDTO() {}

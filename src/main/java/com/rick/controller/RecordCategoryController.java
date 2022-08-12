@@ -1,6 +1,7 @@
 package com.rick.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.rick.base.controller.BaseController;
 import com.rick.domain.R;
 import com.rick.domain.page.TableDataInfo;
@@ -12,6 +13,7 @@ import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/category")
@@ -45,5 +47,10 @@ public class RecordCategoryController extends BaseController {
     @PostMapping("/remove/{id}")
     public R<Void> remove(@PathVariable Integer id){
         return toAjax(recordCategoryService.removeById(id));
+    }
+
+    @PostMapping("/dict")
+    public R<List> categoryDict(){
+        return R.ok(recordCategoryService.listMaps(new QueryWrapper<RecordCategory>().select("id,title").eq("create_by",getLoginUser().getId())));
     }
 }

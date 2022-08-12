@@ -6,8 +6,10 @@ import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.util.ObjectUtil;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.rick.constants.Constants;
+import com.rick.domain.WebUserDTO;
 import com.rick.entity.User;
 import com.rick.enums.DeviceType;
 import com.rick.exception.UserException;
@@ -16,6 +18,8 @@ import com.rick.mapper.UserMapper;
 import com.rick.service.IUserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 @Slf4j
@@ -43,4 +47,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper,User> implements IUs
         LoginHelper.loginByDevice(user, DeviceType.PC);
         return StpUtil.getTokenInfo();
     }
+
+    @Override
+    public List<WebUserDTO> userInfoList(QueryWrapper queryWrapper) {
+        return getBaseMapper().userInfoList(queryWrapper);
+    }
+
+    @Override
+    public Boolean setPassword(Integer id, String username, String curPassword, String password) {
+        LambdaQueryWrapper<User> wrapper = new LambdaQueryWrapper<User>().eq(User::getId,id);
+        User user = getOne(wrapper);
+        if(!BCrypt.checkpw(curPassword, user.getPassword())){
+            throw new UserException("user.password.not.match", username);
+        }
+        return update(new LambdaUpdateWrapper<User>().set(User::getPassword,BCrypt.hashpw(password)).eq(User::getId,id));
+    }
+
+
 }

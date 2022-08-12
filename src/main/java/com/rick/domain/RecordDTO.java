@@ -68,7 +68,7 @@ public class RecordDTO implements Serializable {
 
     private String isPrivate;
 
-    private User user;
+    private WebUserDTO user;
 
     private List<Img> imgs;
 
@@ -79,13 +79,15 @@ public class RecordDTO implements Serializable {
     private String categoryTitle;
 
     public String getCategoryTitle() {
-        if(this.getCategoryId() != null && StringUtils.isNotEmpty(this.categoryTitle)){
+        if(this.getCategoryId() != null && StringUtils.isEmpty(this.categoryTitle)){
             this.categoryTitle = IdToNameUtil.getRecordCategoryTitle(this.getCategoryId());
         }
         return categoryTitle;
     }
 
     public List<CommentDTO> comments;
+
+    public List<Long> categoryIds;
 
     public RecordDTO() {}
 }

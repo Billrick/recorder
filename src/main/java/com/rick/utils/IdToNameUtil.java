@@ -1,6 +1,7 @@
 package com.rick.utils;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.rick.domain.WebUserDTO;
 import com.rick.entity.RecordCategory;
 import com.rick.entity.User;
 import com.rick.service.IRecordCategoryService;
@@ -9,15 +10,17 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
 public class IdToNameUtil {
 
-    private static ConcurrentMap<Integer,String> userMap = new ConcurrentHashMap<>();
+    private static ConcurrentMap<Integer,WebUserDTO> userMap = new ConcurrentHashMap<>();
     private static ConcurrentMap<Integer,String> recordCategoryMap = new ConcurrentHashMap<>();
 
     public final IUserService userService;
@@ -26,18 +29,15 @@ public class IdToNameUtil {
 
     @PostConstruct
     public void initData(){
-        userMap = userService.list(new QueryWrapper<User>().select("id", "nick_name")).stream().collect(Collectors.toConcurrentMap(User::getId, User::getNickName));
+        userMap = userService.userInfoList(new QueryWrapper<User>().select("id", "nick_name","avatar","locale")).stream().collect(Collectors.toConcurrentMap(WebUserDTO::getId, Function.identity()));
         recordCategoryMap = recordCategoryService.list(new QueryWrapper<RecordCategory>().select("id","title")).stream().collect(Collectors.toConcurrentMap(RecordCategory::getId, RecordCategory::getTitle));
     }
 
-    public static void modifyUserName(Integer id,String userName){
-        if(StringUtils.isEmpty(userName)){
+    public static void modifyUserName(Integer id,WebUserDTO user){
+        if(user == null){
             return;
         }
-        if(userMap.containsKey(id) && userMap.get(id).equals(userName)){
-            return;
-        }
-        userMap.put(id,userName);
+        userMap.put(id,user);
     }
 
     public static void modifyRecordCategory(Integer id,String title){
@@ -51,7 +51,7 @@ public class IdToNameUtil {
     }
 
 
-    public static String getUserName(Integer id){
+    public static WebUserDTO getUserInfo(Integer id){
         return userMap.get(id);
     }
 
@@ -59,5 +59,8 @@ public class IdToNameUtil {
         return recordCategoryMap.get(id);
     }
 
+    public static Map getCategoryMap(){
+        return recordCategoryMap;
+    }
 
 }

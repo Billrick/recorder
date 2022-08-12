@@ -13,7 +13,7 @@ public interface IRecordService extends IService<Record> {
 
     boolean deleteRecordAndImg(Integer id);
 
-    List<RecordDTO> getList(Record record);
+    List<RecordDTO> getList(RecordDTO record);
 
     ViewCount getViewInfo(String id,Boolean notJob);
 }

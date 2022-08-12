@@ -32,7 +32,7 @@ public class RecordController extends BaseController {
     }
 
     @PostMapping("/list")
-    public TableDataInfo list(@RequestBody(required = false) Record record){
+    public TableDataInfo list(@RequestBody(required = false) RecordDTO record){
         startPage();
         List<RecordDTO> list = recordService.getList(record);
         return getDataTable(list);

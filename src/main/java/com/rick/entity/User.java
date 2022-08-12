@@ -83,5 +83,7 @@ public class User implements Serializable {
 
     private String locale;
 
+    private String avatar;
+
     public User() {}
 }
