@@ -26,8 +26,9 @@ public class UserController extends BaseController {
 
     public final IUserService userService;
 
-    @PostMapping("/get/{id}")
-    public R<WebUserDTO> get(@PathVariable("id") Integer userId){
+    @PostMapping("/get")
+    public R<WebUserDTO> get(){
+        Integer userId = getUserId();
         return R.ok(BeanUtil.toBean(userService.getById(userId),WebUserDTO.class));
     }
 
