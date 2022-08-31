@@ -2,9 +2,11 @@ package com.rick.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.github.pagehelper.PageHelper;
 import com.rick.base.controller.BaseController;
 import com.rick.domain.R;
 import com.rick.domain.page.TableDataInfo;
+import com.rick.domain.request.RecordCategoryReq;
 import com.rick.entity.RecordCategory;
 import com.rick.service.IRecordCategoryService;
 import com.rick.utils.IdToNameUtil;
@@ -38,8 +40,8 @@ public class RecordCategoryController extends BaseController {
     }
 
     @PostMapping("/list")
-    public TableDataInfo list(){
-        startPage();
+    public TableDataInfo list(@RequestBody RecordCategoryReq req){
+        PageHelper.startPage(req.getPage().getCurrent(),req.getPage().getPageSize());
         List<RecordCategory> list = recordCategoryService.list(new LambdaQueryWrapper<RecordCategory>().eq(RecordCategory::getCreateBy,getLoginUser().getId()));
         return getDataTable(list);
     }

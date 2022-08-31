@@ -2,6 +2,7 @@ package com.rick.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.rick.domain.RecordDTO;
+import com.rick.domain.page.TableDataInfo;
 import com.rick.entity.Record;
 import com.rick.entity.ViewCount;
 
@@ -13,7 +14,7 @@ public interface IRecordService extends IService<Record> {
 
     boolean deleteRecordAndImg(Integer id);
 
-    List<RecordDTO> getList(RecordDTO record);
+    TableDataInfo getList(RecordDTO record, Boolean isPublic);
 
     ViewCount getViewInfo(String id,Boolean notJob);
 }

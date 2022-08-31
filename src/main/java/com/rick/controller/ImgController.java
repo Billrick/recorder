@@ -63,7 +63,7 @@ public class ImgController extends BaseController {
         String url = MessageFormat.format(config.getOpFileUrl(), config.getUser(), config.getRepository(), filePath, uuid);
         String base64 = Base64Encoder.encode(file.getBytes());
         JSONObject params = new JSONObject();
-        params.put("message", "put code");
+        params.put("message", Constants.COMMIT_PUT);
         params.put("content", base64);
         HttpRequest request = null;
         if (config.isGithub()) {
@@ -79,6 +79,7 @@ public class ImgController extends BaseController {
             TmpImg tmpImg = new TmpImg(content.getString("sha"),content.getString("url"), Constants.STATUS_TEMP);
             //暂存图片  如果明天没有被存储到t_img表中 表示是垃圾数据， 系统在后续异步追踪时 会清理
             tmpImgService.save(tmpImg);
+            content.put("id",tmpImg.getId());
         }
         return R.ok(result);
     }
@@ -89,19 +90,26 @@ public class ImgController extends BaseController {
         String filePath = getLoginUser().getId() + "/" + req.getCategoryId();
         String url = MessageFormat.format(config.getOpFileUrl(), config.getUser(), config.getRepository(), filePath, req.getFileName());
         JSONObject params = new JSONObject();
-        params.put("message", "remove code");
+        params.put("message", Constants.COMMIT_DEL);
         params.put("sha", req.getSha());
         HttpRequest request = HttpUtil.createRequest(Method.DELETE, url);
         if (config.isGithub()) {
-            request.addHeaders(headers);
+            request.addHeaders(getRepositoryHeaders());
         } else {
             params.put("access_token", config.getAccessToken());
         }
         String body = request.body(params.toJSONString()).execute().body();
-        TmpImg img = tmpImgService.getOne(new LambdaQueryWrapper<TmpImg>().eq(TmpImg::getSha, req.getSha()));
-        if(img != null){
-            tmpImgService.update(new LambdaUpdateWrapper<TmpImg>().set(TmpImg::getStatus,Constants.STATUS_OFF).eq(TmpImg::getSha, req.getSha()));
+        JSONObject result = JSONObject.parseObject(body);
+        if(result.containsKey("commit")){
+            JSONObject commit = result.getJSONObject("commit");
+            String message = commit.getString("message");
+            if(StringUtils.equals(message,Constants.COMMIT_DEL)){
+                TmpImg img = tmpImgService.getOne(new LambdaQueryWrapper<TmpImg>().eq(TmpImg::getSha, req.getSha()).eq(TmpImg::getId,req.getId()));
+                if(img != null){
+                    tmpImgService.update(new LambdaUpdateWrapper<TmpImg>().set(TmpImg::getStatus,Constants.STATUS_OFF).eq(TmpImg::getSha, req.getSha()).eq(TmpImg::getId,req.getId()));
+                }
+            }
         }
-        return R.ok(JSONObject.parseObject(body));
+        return R.ok(result);
     }
 }

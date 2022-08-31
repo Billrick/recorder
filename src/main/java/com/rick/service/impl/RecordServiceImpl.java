@@ -1,15 +1,19 @@
 package com.rick.service.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.collection.CollectionUtil;
 import com.alibaba.fastjson.JSONObject;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.github.pagehelper.PageHelper;
+import com.github.pagehelper.PageInfo;
 import com.rick.constants.Constants;
 import com.rick.domain.CommentDTO;
 import com.rick.domain.RecordDTO;
 import com.rick.domain.WebUserDTO;
+import com.rick.domain.page.TableDataInfo;
 import com.rick.entity.*;
 import com.rick.framework.satoken.LoginHelper;
 import com.rick.mapper.RecordMapper;
@@ -46,23 +50,24 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper, Record> impleme
     public final ICommentService commentService;
 
     @Override
-    public boolean saveRecordAndImg(RecordDTO record) {
-        boolean save = saveOrUpdate(BeanUtil.toBean(record, Record.class));
-        if (save && CollectionUtil.isNotEmpty(record.getImgs())) {
-            List<Img> imgs = record.getImgs();
+    public boolean saveRecordAndImg(RecordDTO recordDto) {
+        Record record = BeanUtil.toBean(recordDto, Record.class);
+        boolean save = saveOrUpdate(record);
+        if (save && CollectionUtil.isNotEmpty(recordDto.getImgs())) {
+            List<Img> imgs = recordDto.getImgs();
             imgs.forEach(
                     img -> img.setRecordId(record.getId())
             );
-            Set<String> shas = imgs.stream().map(img -> img.getSha()).collect(Collectors.toSet());
             imgService.saveBatch(imgs);
+            Set<Long> ids = imgs.stream().map(img -> img.getId()).collect(Collectors.toSet());
             //把临时图片的状态改为启用状态
-            tmpImgService.update(new LambdaUpdateWrapper<TmpImg>().set(TmpImg::getStatus, Constants.STATUS_ON).in(TmpImg::getSha, shas));
+            tmpImgService.update(new LambdaUpdateWrapper<TmpImg>().set(TmpImg::getStatus, Constants.STATUS_ON).in(TmpImg::getId, ids));
 
         }
         //已存在的数据被删除时, 修改状态,并把图片记录表的状态改为暂存
-        if (CollectionUtil.isNotEmpty(record.getRemoveSha())) {
-            imgService.update(new LambdaUpdateWrapper<Img>().set(Img::getStatus, Constants.STATUS_OFF).in(Img::getSha, record.getRemoveSha()));
-            tmpImgService.update(new LambdaUpdateWrapper<TmpImg>().set(TmpImg::getStatus, Constants.STATUS_TEMP).in(TmpImg::getSha, record.getRemoveSha()));
+        if (CollectionUtil.isNotEmpty(recordDto.getRemoveIds())) {
+            imgService.update(new LambdaUpdateWrapper<Img>().set(Img::getStatus, Constants.STATUS_OFF).in(Img::getId, recordDto.getRemoveIds()));
+            tmpImgService.update(new LambdaUpdateWrapper<TmpImg>().set(TmpImg::getStatus, Constants.STATUS_TEMP).in(TmpImg::getId, recordDto.getRemoveIds()));
         }
         return save;
     }
@@ -76,22 +81,31 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper, Record> impleme
                         .eq(Img::getRecordId, id)
                         .eq(Img::getStatus, Constants.STATUS_ON)).stream()
                 .map(img -> img.getSha()).collect(Collectors.toList());
-        imgService.update(new LambdaUpdateWrapper<Img>().set(Img::getStatus, Constants.STATUS_OFF).in(Img::getSha, imgs));
-        //将数据改为暂存数据  等候清理器进行清理
-        tmpImgService.update(new LambdaUpdateWrapper<TmpImg>().set(TmpImg::getStatus, Constants.STATUS_TEMP).in(TmpImg::getSha, imgs));
+        if(CollectionUtil.isNotEmpty(imgs)){
+            imgService.update(new LambdaUpdateWrapper<Img>().set(Img::getStatus, Constants.STATUS_OFF).in(Img::getSha, imgs));
+            //将数据改为暂存数据  等候清理器进行清理
+            tmpImgService.update(new LambdaUpdateWrapper<TmpImg>().set(TmpImg::getStatus, Constants.STATUS_TEMP).in(TmpImg::getSha, imgs));
+        }
         return save;
     }
 
     @Override
-    public List<RecordDTO> getList(RecordDTO record) {
+    public TableDataInfo getList(RecordDTO record,Boolean isPublic) {
         LambdaQueryWrapper<Record> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(Record::getCreateBy,LoginHelper.getUserId());
-
+        if(!isPublic){
+            wrapper.eq(Record::getCreateBy,LoginHelper.getUserId());
+        }
         if (record != null) {
             wrapper.eq(record.getCategoryId() != null, Record::getCategoryId, record.getCategoryId());
             wrapper.in(CollectionUtil.isNotEmpty(record.getCategoryIds()),Record::getCategoryId,record.getCategoryIds());
         }
-        List<RecordDTO> list = BeanUtil.copyToList(list(wrapper), RecordDTO.class);
+        wrapper.eq(Record::getStatus,Constants.STATUS_ON);
+        wrapper.orderByDesc(Record::getId);
+        PageHelper.startPage(record.getCurrent(),record.getPageSize());
+        List<Record> entityList = list(wrapper);
+        TableDataInfo dataTable = getDataTable(entityList);
+
+        List<RecordDTO> list = BeanUtil.copyToList(entityList, RecordDTO.class);
         list.forEach(item -> {
             //获取图片
             List<Img> imgs = imgService.list(new LambdaQueryWrapper<Img>().eq(Img::getRecordId, item.getId()).eq(Img::getStatus, Constants.STATUS_ON));
@@ -100,14 +114,14 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper, Record> impleme
             item.setUser(BeanUtil.toBean(user, WebUserDTO.class));
             //获取 点赞 收藏的数量
             ViewCount viewInfo = getViewInfo(item.getId() + "",true);
-
             //获取 评论记录
-            List<Comment> comments = commentService.list(new LambdaQueryWrapper<Comment>().eq(Comment::getRecordId, item.getId()).eq(Comment::getStatus, Constants.STATUS_ON));
-            item.setComments(BeanUtil.copyToList(comments, CommentDTO.class));
+            //List<Comment> comments = commentService.list(new LambdaQueryWrapper<Comment>().eq(Comment::getRecordId, item.getId()).eq(Comment::getStatus, Constants.STATUS_ON));
+            //item.setComments(BeanUtil.copyToList(comments, CommentDTO.class));
             //viewInfo.setComment(Long.valueOf(comments.size()));
             item.setViewCount(viewInfo);
         });
-        return list;
+        dataTable.setRows(list);
+        return dataTable;
     }
 
     //获取topic对应的 viewInfo
@@ -131,10 +145,12 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper, Record> impleme
         sumViewCount.setTopic(Constants.VIEW_COUNT_TOPIC);
         sumViewCount.setRecordId(Long.valueOf(id));
         if(notJob){
-            Integer userId = LoginHelper.getUserId();
-            for (Object key: keys) {
-                //自己是否点赞
-                selfDoIt((String) key,id,userId+"",sumViewCount);
+            if(StpUtil.isLogin()){
+                Integer userId = LoginHelper.getUserId();
+                for (Object key: keys) {
+                    //自己是否点赞
+                    selfDoIt((String) key,id,userId+"",sumViewCount);
+                }
             }
         }else{
             redisService.hdel(StringUtils.format(Constants.LIKE_RECORD_COUNTER, id), keys.toArray());
@@ -171,7 +187,18 @@ public class RecordServiceImpl extends ServiceImpl<RecordMapper, Record> impleme
                 break;
             default:
         }
+    }
 
-
+    /**
+     * 响应请求分页数据
+     */
+    @SuppressWarnings({ "rawtypes", "unchecked" })
+    protected TableDataInfo getDataTable(List<?> list)
+    {
+        TableDataInfo rspData = new TableDataInfo();
+        rspData.setCode(200);
+        rspData.setRows(list);
+        rspData.setTotal(new PageInfo(list).getTotal());
+        return rspData;
     }
 }

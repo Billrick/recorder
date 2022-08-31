@@ -70,7 +70,7 @@ public class ViewController extends BaseController {
         //新增或修改 记录的用户信息
         redisService.sadd(StringUtils.format(Constants.LIKE_RECORD_USER, view.getTopic(), view.getRecordId()), userId);//用户操作记录 , 方便后续批量扫入数据库, 根据此遍历LIKE_RECORD_AND_RANK 操作人详情
         redisService.hset(StringUtils.format(Constants.LIKE_RECORD_AND_RANK, view.getTopic(), view.getRecordId()), userId + "", info);
-        //2.对redis中记录的点赞数量计算 TODO: 系统启动时会把点赞数据同步到Redis中
+        //2.对redis中记录的点赞数量计算
         redisService.hIncrBy(StringUtils.format(Constants.LIKE_RECORD_COUNTER, view.getRecordId()), view.getTopic(), score);
         //3.异步线程同步点赞人和点赞数量到库中
         return R.ok();

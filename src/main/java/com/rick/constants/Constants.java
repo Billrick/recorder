@@ -83,9 +83,9 @@ public class Constants {
     public static final String STATUS_ON = "0";
     //停用
     public static final String STATUS_DISABLED = "1";
-    //删除
+    //删除  手动删除
     public static final String STATUS_OFF = "3";
-    //系统删除
+    //系统删除 job删除
     public static final String STATUS_SYS_OFF = "4";
     //暂存
     public static final String STATUS_TEMP = "5";
@@ -102,7 +102,8 @@ public class Constants {
     public final static String LIKE_RECORD_AND_RANK = "recorder:view:rank:{}:{}";
     public final static String LIKE_RECORD_COUNTER = "recorder:view:counter:{}";
 
-
+    public final static String COMMIT_PUT = "put code";
+    public final static String COMMIT_DEL = "remove code";
 
 
 }

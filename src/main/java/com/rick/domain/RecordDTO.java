@@ -72,7 +72,7 @@ public class RecordDTO implements Serializable {
 
     private List<Img> imgs;
 
-    private List<String> removeSha;
+    private List<String> removeIds;
 
     private ViewCount viewCount;
 
@@ -88,6 +88,12 @@ public class RecordDTO implements Serializable {
     public List<CommentDTO> comments;
 
     public List<Long> categoryIds;
+
+    private String orderField;
+
+    private Integer current;
+
+    private Integer pageSize = 8;
 
     public RecordDTO() {}
 }

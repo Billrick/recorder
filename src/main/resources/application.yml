@@ -177,6 +177,7 @@ security:
     - /logout
     - /register
     - /captchaImage
+    - /public/**
     # 静态资源
     - /*.html
     - /**/*.html
@@ -297,6 +298,11 @@ logging:
     com.rick: debug
     org.springframework: warn
   config: classpath:logback.xml
+# PageHelper分页插件
+pagehelper:
+  helperDialect: mysql
+  supportMethodsArguments: true
+  params: count=countSql
 --- # redisson 缓存配置
 redisson:
   cacheGroup:

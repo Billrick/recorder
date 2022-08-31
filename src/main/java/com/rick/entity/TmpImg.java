@@ -23,6 +23,8 @@ public class TmpImg implements Serializable {
     * sha
     */
     @TableId
+    private Long id;
+
     private String sha;
 
     /**
@@ -59,11 +61,20 @@ public class TmpImg implements Serializable {
     @TableField(fill = FieldFill.INSERT_UPDATE)
     private Integer updateBy;
 
+    private String remark;
+
     public TmpImg() {}
 
     public TmpImg(String sha, String url, String status) {
         this.sha = sha;
         this.url = url;
         this.status = status;
+    }
+
+    public TmpImg(String sha, String url, String status,String remark) {
+        this.sha = sha;
+        this.url = url;
+        this.status = status;
+        this.remark = remark;
     }
 }
